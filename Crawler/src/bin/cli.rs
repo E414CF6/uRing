@@ -69,8 +69,12 @@ enum Command {
 
 /// Initialize logging based on verbosity flag.
 fn init_logging(verbose: bool) {
-    let level = if verbose { "debug" } else { "info" };
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(level))
+    let filter = if verbose {
+        "crawler=debug,warn"
+    } else {
+        "crawler=info"
+    };
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(filter))
         .format_timestamp_secs()
         .init();
 }

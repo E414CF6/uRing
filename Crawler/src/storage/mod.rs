@@ -99,8 +99,10 @@ pub struct CurrentData {
     /// ISO 8601 timestamp of last update
     pub updated_at: DateTime<Utc>,
     /// Total notice count
+    #[serde(default)]
     pub count: usize,
     /// The notices array
+    #[serde(default)]
     pub notices: Vec<NoticeOutput>,
 }
 

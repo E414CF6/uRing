@@ -1,8 +1,9 @@
 //! Notice crawler service.
 //!
 //! Fetches notices from department boards using configured CSS selectors.
+//! Uses board URL as cache key to avoid ID collisions across departments.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -16,7 +17,7 @@ use crate::models::{
 };
 use crate::utils::{extract_notice_id, http, resolve_url};
 
-/// Board selectors for notice extraction.
+/// Parsed CSS selectors for a board, ready for use.
 #[derive(Clone)]
 struct BoardSelectors {
     row: Selector,
@@ -39,23 +40,24 @@ pub struct NoticeCrawler {
     client: Client,
 }
 
-/// Implementation of NoticeCrawler
 impl NoticeCrawler {
-    /// Create a new notice crawler with the given configuration.
+    /// Create a new notice crawler.
     pub fn new(config: Arc<Config>, client: Client) -> Result<Self> {
         Ok(Self { config, client })
     }
 
     /// Fetch all notices from all campuses concurrently.
+    ///
+    /// Single-stage pipeline: fetch board listing → parse rows → deduplicate.
     pub async fn fetch_all(&self, campuses: &[Campus]) -> Result<CrawlOutcome> {
         let concurrency = self.config.crawler.max_concurrent.max(1);
-        let board_lookup = Arc::new(Self::build_board_lookup(campuses));
-        let (selector_cache, selector_errors, invalid_boards) =
-            Self::build_selector_cache(campuses);
+
+        // Build selector cache keyed by board URL (unique) to avoid ID collisions
+        let (selector_cache, selector_errors, invalid_urls) = Self::build_selector_cache(campuses);
         let selector_cache = Arc::new(selector_cache);
 
-        // Stage 1: Fetch all notice lists from boards concurrently, but bounded by concurrency.
-        let board_jobs_all: Vec<_> = campuses
+        // Collect all (department, board) jobs, filtering out boards with bad selectors
+        let board_jobs: Vec<_> = campuses
             .iter()
             .flat_map(|c| c.all_departments())
             .flat_map(|dept_ref| {
@@ -66,28 +68,31 @@ impl NoticeCrawler {
                     .map(move |board| (dept_ref, board))
             })
             .collect();
-        let board_jobs: Vec<_> = board_jobs_all
-            .into_iter()
-            .filter(|(_, board)| !invalid_boards.contains(board.id.as_str()))
+
+        let valid_jobs: Vec<_> = board_jobs
+            .iter()
+            .filter(|(_, b)| !invalid_urls.contains(b.url.as_str()))
             .collect();
 
         let mut outcome = CrawlOutcome {
-            board_total: board_jobs.len() + invalid_boards.len(),
-            board_failures: invalid_boards.len(),
+            board_total: board_jobs.len(),
+            board_failures: board_jobs.len() - valid_jobs.len(),
             errors: selector_errors,
             ..CrawlOutcome::default()
         };
 
+        // Fetch all board listings concurrently
         let mut notice_buffer = Vec::new();
-        let mut board_stream = stream::iter(board_jobs)
+        let mut board_stream = stream::iter(valid_jobs)
             .map(|(dept_ref, board)| {
-                let selector_cache = Arc::clone(&selector_cache);
+                let cache = Arc::clone(&selector_cache);
                 async move {
-                    let selectors = selector_cache.get(&board.id).cloned().ok_or_else(|| {
-                        AppError::crawl("selector_cache", "Missing selector cache entry")
-                    });
+                    let selectors = cache
+                        .get(board.url.as_str())
+                        .cloned()
+                        .ok_or_else(|| AppError::crawl(&board.url, "Missing selector cache entry"));
                     let result = match selectors {
-                        Ok(selectors) => self.fetch_board_list(dept_ref, board, &selectors).await,
+                        Ok(sel) => self.fetch_board_list(*dept_ref, board, &sel).await,
                         Err(err) => Err(err),
                     };
                     (board, result)
@@ -97,14 +102,14 @@ impl NoticeCrawler {
 
         while let Some((board, result)) = board_stream.next().await {
             match result {
-                Ok(list_result) => {
-                    outcome.notice_total += list_result.row_total;
-                    outcome.notice_failures += list_result.row_failures;
-                    notice_buffer.extend(list_result.notices);
+                Ok(list) => {
+                    outcome.notice_total += list.row_total;
+                    outcome.notice_failures += list.row_failures;
+                    notice_buffer.extend(list.notices);
                 }
                 Err(error) => {
                     outcome.board_failures += 1;
-                    outcome.errors.push(Self::build_error(
+                    outcome.errors.push(Self::make_error(
                         CrawlStage::BoardList,
                         Some(board),
                         Some(&board.url),
@@ -112,7 +117,7 @@ impl NoticeCrawler {
                         &error,
                     ));
                     log::warn!(
-                        "Failed to fetch board list {} ({}): {}",
+                        "Board fetch failed: {} ({}): {}",
                         board.name,
                         board.url,
                         error
@@ -121,69 +126,16 @@ impl NoticeCrawler {
             }
         }
 
+        // Deduplicate by canonical ID
         let mut seen = HashSet::new();
-        let mut deduped = Vec::new();
-        for notice in notice_buffer {
-            let id = notice.canonical_id();
-            if seen.insert(id) {
-                deduped.push(notice);
-            }
-        }
+        notice_buffer.retain(|n| seen.insert(n.canonical_id()));
 
-        // Stage 2: Fetch details for each notice concurrently.
-        outcome.detail_total = deduped.len();
-        let detailed_notices = stream::iter(deduped)
-            .map(|notice| {
-                let board_lookup = Arc::clone(&board_lookup);
-                let selector_cache = Arc::clone(&selector_cache);
-                let notice_id = notice.canonical_id();
-                let board_id = notice.board_id.clone();
-                let board_name = notice.board_name.clone();
-                let url = notice.link.clone();
-                async move {
-                    let result = self
-                        .fetch_notice_detail(notice, &board_lookup, &selector_cache)
-                        .await;
-                    (notice_id, board_id, board_name, url, result)
-                }
-            })
-            .buffer_unordered(concurrency);
-
-        let mut detailed = Vec::new();
-        let mut detail_stream = detailed_notices;
-        while let Some((notice_id, board_id, board_name, url, result)) = detail_stream.next().await
-        {
-            match result {
-                Ok(notice) => detailed.push(notice),
-                Err(error) => {
-                    outcome.detail_failures += 1;
-                    let stage = if matches!(
-                        &error,
-                        AppError::Crawl { context, .. } if context == "find_board"
-                    ) {
-                        CrawlStage::BoardLookup
-                    } else {
-                        CrawlStage::NoticeDetail
-                    };
-                    outcome.errors.push(CrawlError {
-                        stage,
-                        board_id: Some(board_id),
-                        board_name: Some(board_name),
-                        url: Some(url),
-                        notice_id: Some(notice_id),
-                        message: error.to_string(),
-                        retryable: error.is_retryable(),
-                    });
-                    log::warn!("Failed to fetch notice detail: {}", error);
-                }
-            }
-        }
-
-        outcome.notices = detailed;
+        outcome.detail_total = notice_buffer.len();
+        outcome.notices = notice_buffer;
         Ok(outcome)
     }
 
-    /// Fetch a list of notices from a single board.
+    /// Fetch and parse a single board's notice list page.
     async fn fetch_board_list(
         &self,
         dept_ref: DepartmentRef<'_>,
@@ -191,6 +143,7 @@ impl NoticeCrawler {
         selectors: &BoardSelectors,
     ) -> Result<BoardListResult> {
         self.apply_request_delay().await;
+
         let document = http::fetch_page_async(&self.client, &board.url).await?;
         let base_url = url::Url::parse(&board.url)?;
         let mut notices = Vec::new();
@@ -212,23 +165,12 @@ impl NoticeCrawler {
                 row_failures += 1;
             }
         }
+
         Ok(BoardListResult {
             notices,
             row_total,
             row_failures,
         })
-    }
-
-    /// Process a single notice (placeholder for future detail fetching).
-    async fn fetch_notice_detail(
-        &self,
-        notice: Notice,
-        _board_lookup: &HashMap<&str, &Board>,
-        _selector_cache: &HashMap<String, Arc<BoardSelectors>>,
-    ) -> Result<Notice> {
-        // Note: Body content is no longer stored in the notice.
-        // This method is kept for future pinned detection or other metadata
-        Ok(notice)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -293,16 +235,20 @@ impl NoticeCrawler {
         }
     }
 
+    /// Build selector cache keyed by board **URL** (globally unique).
+    ///
+    /// Previous implementation used `board.id` as key, which collided across
+    /// departments sharing the same board type (e.g., many "notice" boards).
     fn build_selector_cache(
         campuses: &[Campus],
     ) -> (
-        HashMap<String, Arc<BoardSelectors>>,
+        std::collections::HashMap<String, Arc<BoardSelectors>>,
         Vec<CrawlError>,
         HashSet<String>,
     ) {
-        let mut cache = HashMap::new();
+        let mut cache = std::collections::HashMap::new();
         let mut errors = Vec::new();
-        let mut invalid_boards = HashSet::new();
+        let mut invalid_urls = HashSet::new();
 
         for campus in campuses {
             for dept_ref in campus.all_departments() {
@@ -310,80 +256,74 @@ impl NoticeCrawler {
                     let row = match Self::parse_selector(&board.selectors.row_selector) {
                         Ok(sel) => sel,
                         Err(err) => {
-                            errors.push(Self::build_error(
+                            errors.push(Self::make_error(
                                 CrawlStage::Selector,
                                 Some(board),
                                 Some(&board.url),
                                 None,
                                 &err,
                             ));
-                            invalid_boards.insert(board.id.clone());
+                            invalid_urls.insert(board.url.clone());
                             continue;
                         }
                     };
                     let title = match Self::parse_selector(&board.selectors.title_selector) {
                         Ok(sel) => sel,
                         Err(err) => {
-                            errors.push(Self::build_error(
+                            errors.push(Self::make_error(
                                 CrawlStage::Selector,
                                 Some(board),
                                 Some(&board.url),
                                 None,
                                 &err,
                             ));
-                            invalid_boards.insert(board.id.clone());
+                            invalid_urls.insert(board.url.clone());
                             continue;
                         }
                     };
                     let date = match Self::parse_selector(&board.selectors.date_selector) {
                         Ok(sel) => sel,
                         Err(err) => {
-                            errors.push(Self::build_error(
+                            errors.push(Self::make_error(
                                 CrawlStage::Selector,
                                 Some(board),
                                 Some(&board.url),
                                 None,
                                 &err,
                             ));
-                            invalid_boards.insert(board.id.clone());
+                            invalid_urls.insert(board.url.clone());
                             continue;
                         }
                     };
-                    let author = match board.selectors.author_selector.as_ref() {
-                        Some(sel) => match Self::parse_selector(sel) {
-                            Ok(parsed) => Some(parsed),
-                            Err(err) => {
-                                errors.push(Self::build_error(
+                    let author = board.selectors.author_selector.as_ref().and_then(|sel| {
+                        Self::parse_selector(sel)
+                            .map_err(|err| {
+                                errors.push(Self::make_error(
                                     CrawlStage::Selector,
                                     Some(board),
                                     Some(&board.url),
                                     None,
                                     &err,
                                 ));
-                                None
-                            }
-                        },
-                        None => None,
-                    };
-                    let link = match board.selectors.link_selector.as_ref() {
-                        Some(sel) => match Self::parse_selector(sel) {
-                            Ok(parsed) => Some(parsed),
-                            Err(err) => {
-                                errors.push(Self::build_error(
+                            })
+                            .ok()
+                    });
+                    let link = board.selectors.link_selector.as_ref().and_then(|sel| {
+                        Self::parse_selector(sel)
+                            .map_err(|err| {
+                                errors.push(Self::make_error(
                                     CrawlStage::Selector,
                                     Some(board),
                                     Some(&board.url),
                                     None,
                                     &err,
                                 ));
-                                None
-                            }
-                        },
-                        None => None,
-                    };
+                            })
+                            .ok()
+                    });
 
                     cache.insert(
-                        board.id.clone(),
+                        board.url.clone(),
                         Arc::new(BoardSelectors {
                             row,
                             title,
@@ -396,10 +336,10 @@ impl NoticeCrawler {
             }
         }
 
-        (cache, errors, invalid_boards)
+        (cache, errors, invalid_urls)
     }
 
-    fn build_error(
+    fn make_error(
         stage: CrawlStage,
         board: Option<&Board>,
         url: Option<&str>,
@@ -415,30 +355,6 @@ impl NoticeCrawler {
             message: error.to_string(),
             retryable: error.is_retryable(),
         }
-    }
-
-    fn build_board_lookup<'a>(campuses: &'a [Campus]) -> HashMap<&'a str, &'a Board> {
-        campuses
-            .iter()
-            .flat_map(|campus| campus.all_departments())
-            .flat_map(|dept_ref| dept_ref.dept.boards.iter())
-            .map(|board| (board.id.as_str(), board))
-            .collect()
-    }
-
-    #[allow(dead_code)]
-    fn find_board<'a>(
-        &self,
-        notice: &Notice,
-        board_lookup: &'a HashMap<&str, &'a Board>,
-    ) -> Result<&'a Board> {
-        board_lookup
-            .get(notice.board_id.as_str())
-            .copied()
-            .ok_or_else(|| AppError::Crawl {
-                context: "find_board".to_string(),
-                message: format!("Board with id {} not found", notice.board_id),
-            })
     }
 
     fn parse_selector(s: &str) -> Result<Selector> {
