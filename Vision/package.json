@@ -1,5 +1,5 @@
 {
-  "name": "uring-vision",
+  "name": "uring",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,17 +12,17 @@
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.3.1",
     "next": "^16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/node": "^25.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10.0.2",
+    "eslint-config-next": "^16.1.6",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3"
   }
 }
