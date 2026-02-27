@@ -2,3 +2,6 @@
 
 # Ignore build artifacts
 target/
+
+# Ignore crawled data
+storage/**/*.json
