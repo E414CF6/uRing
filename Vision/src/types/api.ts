@@ -1,5 +1,3 @@
-// src/types/api.ts
-
 /**
  * API Response Wrapper
  */

@@ -1,5 +1,3 @@
-// src/components/ui/index.ts
-
 export { StatCard } from './StatCard';
 export { Chip } from './Chip';
 export { MetaPill } from './MetaPill';

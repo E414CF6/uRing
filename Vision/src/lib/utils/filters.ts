@@ -1,5 +1,3 @@
-// src/core/utils/filters.ts
-
 import type { Notice } from '@/types/notice';
 import type { FilterOptions } from '@/types/filter';
 

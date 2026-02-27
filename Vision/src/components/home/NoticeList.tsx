@@ -1,21 +1,9 @@
-// src/components/home/NoticeList.tsx
-
 import { EmptyState, Spinner } from '@components/ui';
 
 import { NoticeCard } from './NoticeCard';
 
 import type { RefObject } from 'react';
-
-interface Notice {
-    link: string;
-    campus: string;
-    department_name: string;
-    department_id: string;
-    board_name: string;
-    board_id: string;
-    title: string;
-    date: string | null;
-}
+import type { Notice } from '@/types/notice';
 
 interface NoticeListProps {
     notices: Notice[];
@@ -61,7 +49,7 @@ export function NoticeList({
                     <div className="notice-grid">
                         {notices.map((notice, index) => (
                             <NoticeCard
-                                key={`${notice.link}-${notice.department_id}-${notice.board_id}-${index}`}
+                                key={`${notice.id}-${index}`}
                                 notice={notice}
                                 index={index}
                             />

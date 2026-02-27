@@ -1,5 +1,3 @@
-// src/components/ui/Chip.tsx
-
 interface ChipProps {
     children: React.ReactNode;
     onRemove?: () => void;

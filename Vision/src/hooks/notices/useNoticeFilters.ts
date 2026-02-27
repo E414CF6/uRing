@@ -1,9 +1,8 @@
-// src/core/hooks/useNoticeFilters.ts
-
 import { useState, useCallback, useMemo } from 'react';
 import { noticeService } from '@/services/notice';
 import { getUniqueCampuses, getUniqueDepartments, getUniqueBoards } from '@lib/utils/filters';
-import type { Notice, FilterOptions } from '@/types/notice';
+import type { Notice } from '@/types/notice';
+import type { FilterOptions } from '@/types/filter';
 
 /**
  * 공지사항 필터링 및 검색 Hook

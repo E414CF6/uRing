@@ -1,5 +1,3 @@
-// src/core/utils/stats.ts
-
 import type { Notice, NoticeStats } from '@/types/notice';
 
 /**

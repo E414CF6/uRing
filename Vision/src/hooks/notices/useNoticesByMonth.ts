@@ -1,5 +1,3 @@
-// src/core/hooks/useNoticesByMonth.ts
-
 import { useEffect, useState, useCallback } from 'react';
 import { noticeService } from '@/services/notice';
 import type { Notice } from '@/types/notice';
@@ -32,10 +30,10 @@ export function useNoticesByMonth(year: number, month: number) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
 
-  return { 
-    notices, 
-    loading, 
-    error, 
-    refresh: load 
+  return {
+    notices,
+    loading,
+    error,
+    refresh: load
   };
 }

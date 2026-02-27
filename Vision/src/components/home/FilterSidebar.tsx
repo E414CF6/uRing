@@ -1,5 +1,3 @@
-// src/components/home/FilterSidebar.tsx
-
 import { Chip } from '@components/ui';
 
 interface FilterSidebarProps {

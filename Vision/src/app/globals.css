@@ -504,6 +504,235 @@ a {
   color: var(--page-muted);
 }
 
+.ds-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.ds-dot-local {
+  background: var(--page-accent-3);
+  box-shadow: 0 0 4px rgba(242, 193, 78, 0.6);
+}
+
+.ds-dot-s3 {
+  background: var(--page-accent-2);
+  box-shadow: 0 0 4px rgba(27, 127, 121, 0.6);
+}
+
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-right: 6px;
+  letter-spacing: 0.04em;
+}
+
+.ds-badge-local {
+  background: rgba(242, 193, 78, 0.2);
+  border: 1px solid rgba(242, 193, 78, 0.45);
+  color: #8a6d1b;
+}
+
+.ds-badge-s3 {
+  background: rgba(27, 127, 121, 0.15);
+  border: 1px solid rgba(27, 127, 121, 0.35);
+  color: #1b7f79;
+}
+
+.stats-footer {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, var(--page-bg) 0%, #ede5d6 100%);
+  border-top: 1px solid var(--page-border);
+  padding: 48px 24px 56px;
+}
+
+.stats-footer-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 32px;
+}
+
+.stats-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stats-footer-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--page-ink);
+  color: #fdf6ea;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: -0.04em;
+  flex-shrink: 0;
+}
+
+.stats-footer-title {
+  display: block;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.stats-footer-sub {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--page-muted);
+}
+
+.stats-footer-loading {
+  text-align: center;
+  color: var(--page-muted);
+  font-size: 0.85rem;
+}
+
+.stats-footer-copy {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--page-muted);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.stats-grid-section {
+  background: var(--page-surface);
+  border: 1px solid var(--page-border);
+  border-radius: var(--page-radius-lg);
+  padding: 20px;
+  box-shadow: 0 6px 20px -12px rgba(31, 23, 16, 0.3);
+}
+
+.stats-section-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--page-muted);
+  margin-bottom: 14px;
+}
+
+/* Key-Value pairs */
+.stats-kv-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.stats-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-kv-label {
+  font-size: 0.82rem;
+  color: var(--page-muted);
+}
+
+.stats-kv-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: right;
+  display: flex;
+  align-items: center;
+}
+
+/* Metric cards row */
+.stats-metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+
+.stats-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stats-metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--page-ink);
+}
+
+.stats-metric-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--page-muted);
+}
+
+/* Bar charts */
+.stats-bar-group {
+  display: grid;
+  gap: 14px;
+}
+
+.stats-bar-item {
+  display: grid;
+  gap: 4px;
+}
+
+.stats-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.stats-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.stats-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.stats-bar-fill-teal {
+  background: var(--page-accent-2);
+}
+
+.stats-bar-fill-accent {
+  background: var(--page-accent);
+}
+
+.stats-bar-fill-gold {
+  background: var(--page-accent-3);
+}
+
+.stats-bar-detail {
+  font-size: 0.72rem;
+  color: var(--page-muted);
+}
+
+.stats-bar-fail {
+  color: var(--page-accent);
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   line-clamp: 2;

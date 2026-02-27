@@ -1,9 +1,8 @@
-// src/components/home/HeroSection.tsx
-
 import { StatCard, MetaPill } from '@components/ui';
 
 interface HeroSectionProps {
     dataSourceLabel: string;
+    dataSourceMode: string;
     latestDate: string | null;
     totalNotices: number;
     filteredCount: number;
@@ -11,11 +10,13 @@ interface HeroSectionProps {
         campuses: number;
         departments: number;
         boards: number;
+        colleges: number;
     };
 }
 
 export function HeroSection({
     dataSourceLabel,
+    dataSourceMode,
     latestDate,
     totalNotices,
     filteredCount,
@@ -37,14 +38,18 @@ export function HeroSection({
                         </div>
                     </div>
                     <div className="hero-meta">
-                        <MetaPill>Data: {dataSourceLabel}</MetaPill>
+                        <MetaPill>
+                            <span className={`ds-dot ds-dot-${dataSourceMode}`} />
+                            {dataSourceLabel}
+                        </MetaPill>
                         <MetaPill>Latest: {latestDate || 'no data'}</MetaPill>
-                        <MetaPill>Total: {totalNotices} notices</MetaPill>
+                        <MetaPill>Total: {totalNotices.toLocaleString()} notices</MetaPill>
                     </div>
                 </div>
                 <div className="hero-stats">
-                    <StatCard label="Notices" value={filteredCount} />
+                    <StatCard label="Notices" value={filteredCount.toLocaleString()} />
                     <StatCard label="Campuses" value={stats.campuses} />
+                    <StatCard label="Colleges" value={stats.colleges} />
                     <StatCard label="Departments" value={stats.departments} />
                     <StatCard label="Boards" value={stats.boards} />
                 </div>

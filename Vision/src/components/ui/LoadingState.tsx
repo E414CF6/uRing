@@ -1,5 +1,3 @@
-// src/components/ui/LoadingState.tsx
-
 import { Spinner } from './Spinner';
 
 interface LoadingStateProps {

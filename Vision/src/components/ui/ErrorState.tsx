@@ -1,5 +1,3 @@
-// src/components/ui/ErrorState.tsx
-
 interface ErrorStateProps {
     title?: string;
     message: string;

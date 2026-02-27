@@ -1,5 +1,3 @@
-// src/core/hooks/useInfiniteNotices.ts
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { noticeService } from '@/services/notice';
@@ -64,8 +62,8 @@ export function useInfiniteNotices() {
           .sort();
 
         if (dates.length > 0) {
-          const oldest = dates[0]; // YYYY.MM.DD 형식
-          const [year, month] = oldest.split('.').map(Number);
+          const oldest = dates[0]; // YYYY-MM-DD 형식
+          const [year, month] = oldest.split('-').map(Number);
           setOldestDate(new Date(year, month - 1, 1));
         }
       }
@@ -97,9 +95,9 @@ export function useInfiniteNotices() {
       if (response.status === 'success' && response.data.length > 0) {
         // 기존 공지사항에 추가 (중복 제거)
         setNotices(prev => {
-          const existingIds = new Set(prev.map(n => `${n.link}-${n.date}`));
+          const existingIds = new Set(prev.map(n => n.id));
           const newNotices = response.data.filter(
-            n => !existingIds.has(`${n.link}-${n.date}`)
+            n => !existingIds.has(n.id)
           );
           return [...prev, ...newNotices];
         });

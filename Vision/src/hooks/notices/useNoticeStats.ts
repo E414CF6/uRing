@@ -1,5 +1,3 @@
-// src/core/hooks/useNoticeStats.ts
-
 import { useMemo } from 'react';
 import { noticeService } from '@/services/notice';
 import type { Notice, NoticeStats } from '@/types/notice';

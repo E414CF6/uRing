@@ -1,5 +1,3 @@
-// src/app/layout.tsx
-
 import "./globals.css";
 
 import { Fraunces, Space_Grotesk } from "next/font/google";

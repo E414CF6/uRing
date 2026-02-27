@@ -1,5 +1,3 @@
-// src/components/ui/MetaPill.tsx
-
 interface MetaPillProps {
     children: React.ReactNode;
 }

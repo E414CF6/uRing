@@ -1,5 +1,3 @@
-// src/core/services/notice.service.ts
-
 import { noticeApi } from '@lib/client';
 
 import { applyFilters, sortByDateDesc } from '@lib/utils/filters';
@@ -7,7 +5,7 @@ import { calculateStats, getLatestDate } from '@lib/utils/stats';
 
 import type { ApiResponse } from '@/types/api';
 import type { FilterOptions } from '@/types/filter';
-import type { Notice, NoticeStats, ArchivePeriod } from '@/types/notice';
+import type { Notice, NoticeStats, ArchivePeriod, CrawlStats, IndexMeta } from '@/types/notice';
 
 /**
  * Notice business logic service
@@ -32,6 +30,20 @@ export class NoticeService {
    */
   async getNoticesByMonths(periods: ArchivePeriod[]): Promise<ApiResponse<Notice[]>> {
     return await noticeApi.fetchByMonths(periods);
+  }
+
+  /**
+   * Get crawl statistics from stats.json
+   */
+  async getCrawlStats(): Promise<ApiResponse<CrawlStats>> {
+    return await noticeApi.fetchStats();
+  }
+
+  /**
+   * Get index metadata from index.json
+   */
+  async getIndexMeta(): Promise<ApiResponse<IndexMeta>> {
+    return await noticeApi.fetchIndexMeta();
   }
 
   /**
@@ -68,6 +80,17 @@ export class NoticeService {
   processNotices(notices: Notice[], options: FilterOptions): Notice[] {
     const filtered = this.filterNotices(notices, options);
     return this.sortNotices(filtered);
+  }
+
+  /**
+   * Data-source info (delegated from client)
+   */
+  getDataSourceLabel(): string {
+    return noticeApi.dataSource.label;
+  }
+
+  getDataSourceMode(): string {
+    return noticeApi.dataSource.mode;
   }
 }
 

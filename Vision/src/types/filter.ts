@@ -1,5 +1,3 @@
-// src/types/filter.ts
-
 /**
  * Filter Options Type
  */

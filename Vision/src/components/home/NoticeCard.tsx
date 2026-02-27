@@ -1,16 +1,7 @@
-// src/components/home/NoticeCard.tsx
+import type { Notice } from '@/types/notice';
 
 interface NoticeCardProps {
-    notice: {
-        link: string;
-        campus: string;
-        department_name: string;
-        title: string;
-        board_name: string;
-        department_id: string;
-        board_id: string;
-        date: string | null;
-    };
+    notice: Notice;
     index: number;
 }
 
@@ -31,8 +22,7 @@ export function NoticeCard({ notice, index }: NoticeCardProps) {
             </div>
             <div className="notice-tags">
                 <span className="tag tag-accent">{notice.board_name}</span>
-                <span className="tag tag-teal">{notice.department_id}</span>
-                <span className="tag">{notice.board_id}</span>
+                <span className="tag tag-teal">{notice.college}</span>
             </div>
             <div className="notice-footer">
                 <span className="notice-date">{notice.date || 'Date Unknown'}</span>

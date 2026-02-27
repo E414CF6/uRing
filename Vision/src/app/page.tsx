@@ -1,16 +1,21 @@
-// src/app/page.tsx
-
 'use client';
 
-import { useInfiniteNotices, useNoticeFilters, useNoticeStats, useIntersectionObserver } from '@hooks/index';
+import {
+  useInfiniteNotices,
+  useNoticeFilters,
+  useNoticeStats,
+  useCrawlStats,
+  useDataSource,
+  useIntersectionObserver,
+} from '@hooks/index';
 
-import { HeroSection, FilterSidebar, NoticeList } from '@components/home';
+import { HeroSection, FilterSidebar, NoticeList, StatsFooter } from '@components/home';
 import { LoadingState, ErrorState } from '@components/ui';
 
-// @TODO: This label should be dynamic based on the data source used.
-const dataSourceLabel = 'Local Snapshot (public/v1)';
-
 export default function Home() {
+  // Data source info (local vs S3)
+  const { mode: dataSourceMode, label: dataSourceLabel } = useDataSource();
+
   // Infinite Notices Hook
   const {
     notices,
@@ -18,7 +23,7 @@ export default function Home() {
     loadingMore,
     error,
     hasMore,
-    loadMore
+    loadMore,
   } = useInfiniteNotices();
 
   // Filter Hook and State Management
@@ -38,8 +43,11 @@ export default function Home() {
     filteredNotices,
   } = useNoticeFilters(notices);
 
-  // Notice Statistics
+  // Notice Statistics (computed from loaded notices)
   const { stats, latestDate } = useNoticeStats(notices);
+
+  // Crawl statistics from stats.json
+  const { crawlStats, loading: crawlStatsLoading } = useCrawlStats();
 
   // Infinite Scroll Observer
   const loadMoreRef = useIntersectionObserver(
@@ -48,7 +56,7 @@ export default function Home() {
         loadMore();
       }
     },
-    { enabled: !loading && !loadingMore && hasMore }
+    { enabled: !loading && !loadingMore && hasMore },
   );
 
   // Loading State
@@ -66,6 +74,7 @@ export default function Home() {
     <div className="app-shell">
       <HeroSection
         dataSourceLabel={dataSourceLabel}
+        dataSourceMode={dataSourceMode}
         latestDate={latestDate}
         totalNotices={notices.length}
         filteredCount={filteredNotices.length}
@@ -98,10 +107,12 @@ export default function Home() {
         />
       </main>
 
-      <footer className="footer">
-        <p>uRing Viewer - Yonsei University Notice Monitor</p>
-        <p>Provides a unified feed by refining campus notice data.</p>
-      </footer>
+      <StatsFooter
+        crawlStats={crawlStats}
+        dataSourceLabel={dataSourceLabel}
+        dataSourceMode={dataSourceMode}
+        loading={crawlStatsLoading}
+      />
     </div>
   );
 }

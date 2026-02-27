@@ -1,5 +1,3 @@
-# .gitignore
-
 # Dummy data files
 /public/**/*.json
 
@@ -39,6 +37,7 @@ yarn-error.log*
 .env*
 
 !.env.example
+!.env.production.example
 
 # vercel
 .vercel
