@@ -86,5 +86,29 @@ pub async fn fetch_page_async(client: &reqwest::Client, url: &str) -> Result<Htm
     }
 
     let text = resp.text().await?;
+
+    // Detect WAF/firewall block pages (common on Yonsei subdomains)
+    // These return HTTP 200 but contain a minimal EUC-KR encoded block page
+    if text.len() < 2000 {
+        let lower = text.to_lowercase();
+        if lower.contains("charset=euc-kr") && lower.contains("display: table") {
+            return Err(AppError::WafBlocked {
+                url: url.to_string(),
+            }
+            .into());
+        }
+        // Detect empty or near-empty responses that aren't real pages
+        let stripped = text.trim();
+        if stripped.is_empty()
+            || (stripped.len() < 200 && !stripped.contains("<a") && !stripped.contains("<meta"))
+        {
+            return Err(AppError::UpstreamHttp {
+                url: url.to_string(),
+                status: 204, // treat as "no content"
+            }
+            .into());
+        }
+    }
+
     Ok(Html::parse_document(&text))
 }

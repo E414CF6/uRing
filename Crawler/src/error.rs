@@ -86,6 +86,10 @@ pub enum AppError {
         max_bytes: u64,
     },
 
+    /// WAF/firewall block page detected (HTTP 200 but content is a block page)
+    #[error("WAF blocked for {url}")]
+    WafBlocked { url: String },
+
     /// Circuit breaker triggered - data drop threshold exceeded
     #[error(
         "Circuit breaker triggered: {current_count} notices vs {previous_count} previous ({drop_percent:.1}% drop > {threshold_percent}% threshold)"

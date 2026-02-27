@@ -192,7 +192,10 @@ impl<'a> BoardDiscoveryService<'a> {
                 let Some(full_url) = resolve(base_url, href) else {
                     continue;
                 };
-                if seen_urls.contains(&full_url) || href.contains("javascript") || href == "#" {
+                if seen_urls.contains(&full_url)
+                    || href.contains("javascript")
+                    || href.starts_with('#')
+                {
                     continue;
                 }
 
@@ -234,7 +237,11 @@ impl<'a> BoardDiscoveryService<'a> {
         url: String,
         default_selectors: &Option<CmsSelectors>,
     ) -> Option<Board> {
-        let mapping = self.keywords.iter().find(|m| text.contains(&m.keyword))?;
+        let text_lower = text.to_lowercase();
+        let mapping = self.keywords.iter().find(|m| {
+            let kw = m.keyword.to_lowercase();
+            text_lower.contains(&kw) && Self::keyword_at_boundary(&text_lower, &kw)
+        })?;
         let selectors = self.detect_board_selectors(&url, default_selectors).await?;
         let board_name = if text.is_empty() {
             mapping.display_name.clone()
@@ -247,6 +254,19 @@ impl<'a> BoardDiscoveryService<'a> {
             url,
             selectors,
         })
+    }
+
+    /// For short keywords (≤ 2 chars), require the keyword to be at the
+    /// start/end of the text or surrounded by spaces. This prevents false
+    /// positives like "인공지능" accidentally matching the keyword "공지".
+    fn keyword_at_boundary(text: &str, keyword: &str) -> bool {
+        if keyword.chars().count() > 2 {
+            return true;
+        }
+        text.starts_with(keyword)
+            || text.ends_with(keyword)
+            || text.contains(&format!(" {keyword}"))
+            || text.contains(&format!("{keyword} "))
     }
 
     async fn detect_board_selectors(

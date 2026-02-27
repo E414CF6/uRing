@@ -26,12 +26,16 @@ impl SelectorDetector {
         self.patterns.iter().find_map(|pattern| {
             if self.matches_pattern(pattern, url, &html_lower) {
                 log::debug!("Detected CMS pattern: '{}' for URL: {}", pattern.name, url);
-                Some(CmsSelectors::from_pattern(
+                let mut selectors = CmsSelectors::from_pattern(
                     &pattern.row_selector,
                     &pattern.title_selector,
                     &pattern.date_selector,
                     &pattern.link_attr,
-                ))
+                );
+                if let Some(ref link_sel) = pattern.link_selector {
+                    selectors = selectors.with_link_selector(link_sel);
+                }
+                Some(selectors)
             } else {
                 None
             }

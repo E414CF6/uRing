@@ -68,6 +68,12 @@ impl CmsSelectors {
         }
     }
 
+    /// Set a custom link selector (for CMS where the link element differs from the title).
+    pub fn with_link_selector(mut self, link_selector: impl Into<String>) -> Self {
+        self.link_selector = Some(link_selector.into());
+        self
+    }
+
     /// Create fallback selectors that work with common board patterns.
     /// These are generic selectors that should work with most table-based boards.
     pub fn fallback() -> Self {

@@ -263,12 +263,20 @@ mod defaults {
     }
     pub fn blacklist_patterns() -> Vec<String> {
         vec![
+            // Individual article view patterns
             "articleNo".into(),
             "article_no".into(),
             "mode=view".into(),
             "seq".into(),
             "view.do".into(),
             "board_seq".into(),
+            // Non-board page patterns (faculty, curriculum, research, etc.)
+            "/faculty/".into(),
+            "/member/".into(),
+            "/educate/".into(),
+            "professor.do".into(),
+            "staff.do".into(),
+            "prospect.do".into(),
         ]
     }
 
@@ -289,6 +297,7 @@ mod defaults {
     // Keyword defaults
     pub fn default_keywords() -> Vec<KeywordMapping> {
         vec![
+            // === Korean keywords (specific first, then general) ===
             KeywordMapping {
                 keyword: "학부공지".to_string(),
                 id: "academic".to_string(),
@@ -339,6 +348,67 @@ mod defaults {
                 id: "notice".to_string(),
                 display_name: "알림".to_string(),
             },
+            KeywordMapping {
+                keyword: "학과소식".to_string(),
+                id: "notice".to_string(),
+                display_name: "학과소식".to_string(),
+            },
+            KeywordMapping {
+                keyword: "소식".to_string(),
+                id: "notice".to_string(),
+                display_name: "소식".to_string(),
+            },
+            KeywordMapping {
+                keyword: "게시판".to_string(),
+                id: "notice".to_string(),
+                display_name: "게시판".to_string(),
+            },
+            KeywordMapping {
+                keyword: "뉴스".to_string(),
+                id: "notice".to_string(),
+                display_name: "뉴스".to_string(),
+            },
+            KeywordMapping {
+                keyword: "행사".to_string(),
+                id: "notice".to_string(),
+                display_name: "행사안내".to_string(),
+            },
+            // === English keywords (case-insensitive matching in try_create_board) ===
+            KeywordMapping {
+                keyword: "announcement".to_string(),
+                id: "notice".to_string(),
+                display_name: "공지사항".to_string(),
+            },
+            KeywordMapping {
+                keyword: "notice".to_string(),
+                id: "notice".to_string(),
+                display_name: "공지사항".to_string(),
+            },
+            KeywordMapping {
+                keyword: "bulletin".to_string(),
+                id: "notice".to_string(),
+                display_name: "게시판".to_string(),
+            },
+            KeywordMapping {
+                keyword: "scholarship".to_string(),
+                id: "scholarship".to_string(),
+                display_name: "장학공지".to_string(),
+            },
+            KeywordMapping {
+                keyword: "career".to_string(),
+                id: "career".to_string(),
+                display_name: "취업/진로".to_string(),
+            },
+            KeywordMapping {
+                keyword: "employment".to_string(),
+                id: "career".to_string(),
+                display_name: "채용정보".to_string(),
+            },
+            KeywordMapping {
+                keyword: "news".to_string(),
+                id: "notice".to_string(),
+                display_name: "뉴스".to_string(),
+            },
         ]
     }
 
@@ -353,6 +423,7 @@ mod defaults {
                 title_selector: "a.c-board-title".to_string(),
                 date_selector: "td:nth-last-child(1)".to_string(),
                 link_attr: "href".to_string(),
+                link_selector: None,
             },
             CmsPattern {
                 name: "nx_cms".to_string(),
@@ -362,6 +433,7 @@ mod defaults {
                 title_selector: "td.td-subject a".to_string(),
                 date_selector: "td.td-date".to_string(),
                 link_attr: "href".to_string(),
+                link_selector: None,
             },
             CmsPattern {
                 name: "nx_cms_alt".to_string(),
@@ -371,6 +443,7 @@ mod defaults {
                 title_selector: "td.td-subject a".to_string(),
                 date_selector: "td.td-date".to_string(),
                 link_attr: "href".to_string(),
+                link_selector: None,
             },
             CmsPattern {
                 name: "xe_board".to_string(),
@@ -381,6 +454,17 @@ mod defaults {
                 title_selector: "a.xe-list-board-list__title-link".to_string(),
                 date_selector: ".xe-list-board-list__created_at".to_string(),
                 link_attr: "href".to_string(),
+                link_selector: None,
+            },
+            CmsPattern {
+                name: "gnuboard5".to_string(),
+                detect_url_contains: Some("bo_table".to_string()),
+                detect_html_contains: None,
+                row_selector: "li:has(strong.tit)".to_string(),
+                title_selector: "strong.tit".to_string(),
+                date_selector: "span.date".to_string(),
+                link_attr: "href".to_string(),
+                link_selector: Some("a".to_string()),
             },
         ]
     }
@@ -501,4 +585,8 @@ pub struct CmsPattern {
 
     /// HTML attribute for link extraction
     pub link_attr: String,
+
+    /// Optional CSS selector for the link element (when different from title)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link_selector: Option<String>,
 }

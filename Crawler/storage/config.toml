@@ -40,6 +40,13 @@ blacklist_patterns = [
     "seq",
     "view.do",
     "board_seq",
+    # Non-board page patterns
+    "/faculty/",
+    "/member/",
+    "/educate/",
+    "professor.do",
+    "staff.do",
+    "prospect.do",
 ]
 
 # Campus definitions
@@ -94,6 +101,15 @@ title_selector = "a.xe-list-board-list__title-link"
 date_selector = ".xe-list-board-list__created_at"
 link_attr = "href"
 
+[[cms_patterns]]
+name = "gnuboard5"
+detect_url_contains = "bo_table"
+row_selector = "li:has(strong.tit)"
+title_selector = "strong.tit"
+date_selector = "span.date"
+link_attr = "href"
+link_selector = "a"
+
 # Board keyword mappings
 # When these keywords are found in link text, the link is identified as a board
 
@@ -146,3 +162,65 @@ display_name = "채용정보"
 keyword = "알림"
 id = "notice"
 display_name = "알림"
+
+[[keywords]]
+keyword = "학과소식"
+id = "notice"
+display_name = "학과소식"
+
+[[keywords]]
+keyword = "소식"
+id = "notice"
+display_name = "소식"
+
+[[keywords]]
+keyword = "게시판"
+id = "notice"
+display_name = "게시판"
+
+[[keywords]]
+keyword = "뉴스"
+id = "notice"
+display_name = "뉴스"
+
+[[keywords]]
+keyword = "행사"
+id = "notice"
+display_name = "행사안내"
+
+# English keywords (matched case-insensitively)
+
+[[keywords]]
+keyword = "announcement"
+id = "notice"
+display_name = "공지사항"
+
+[[keywords]]
+keyword = "notice"
+id = "notice"
+display_name = "공지사항"
+
+[[keywords]]
+keyword = "bulletin"
+id = "notice"
+display_name = "게시판"
+
+[[keywords]]
+keyword = "scholarship"
+id = "scholarship"
+display_name = "장학공지"
+
+[[keywords]]
+keyword = "career"
+id = "career"
+display_name = "취업/진로"
+
+[[keywords]]
+keyword = "employment"
+id = "career"
+display_name = "채용정보"
+
+[[keywords]]
+keyword = "news"
+id = "notice"
+display_name = "뉴스"
